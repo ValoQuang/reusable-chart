@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Flowchart between Player, KZ and 3rd Payment Provider</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f9f9f9;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    section {
+      background: white;
+      border-radius: 8px;
+      padding: 15px 20px;
+      margin-bottom: 40px;
+      box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+    }
+    .note-center {
+      text-align: center;
+      font-style: italic;
+      color: #7f8c8d;
+      margin: 20px 0;
+      font-size: 1.1em;
+    }
+    pre.json-note {
+      background: #272822;
+      color: #f8f8f2;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 0.9em;
+      line-height: 1.4em;
+    }
+    /* Mermaid actor custom colors */
+    .mermaid .actor.Player rect {
+      fill: #d0e9ff !important;
+    }
+    .mermaid .actor.KZ rect {
+      fill: #d0ffd8 !important;
+    }
+    .mermaid .actor.Provider rect {
+      fill: #ffe6cc !important;
+    }
+    .highlight-callback rect {
+      stroke: #e67e22 !important;
+      stroke-width: 3px !important;
+      fill: #f9d5b3 !important;
+    }
+  </style>
+</head>
+<body>
+
+<h1 class="text-2xl font-bold mb-8">Flowchart between Player, KZ and 3rd Payment Provider</h1>
+
+<section>
+  <h2 class="text-lg font-semibold mb-3">Flow 1: Create order and send from KZ</h2>
+  <div class="mermaid">
+%%{init: { "themeVariables": { "actorBkg": "#d0e9ff", "actorBorder": "#7fbfff" }}}%%
+sequenceDiagram
+    participant Player as Player
+    participant KZ as KZ
+    participant Provider as 3rd Payment Provider
+
+    Note over Player,KZ: Player A open KZ, click create order
+    Player->>KZ: Send request create order
+    KZ->>KZ: Create order, construct payload
+    KZ->>Provider: Send request
+    Provider->>KZ: Response data (with account number: CLABE)
+    KZ->>Player: Return CLABE
+    Player->>Player: Copy CLABE, open app bank
+    Player->>Provider: Transfer fund to CLABE
+    Provider->>Provider: Verify fund
+    Provider-->>KZ: Callback to notify fund received
+    Note right of KZ: <b class="highlight-callback">Callback/validation step</b>
+  </div>
+  <div class="note-center">
+    Sometimes later, player want to send more fund but do not need to open KZ again
+  </div>
+</section>
+
+<section>
+  <h2 class="text-lg font-semibold mb-3">Flow 2: Player transfers fund DIRECTLY through app bank</h2>
+  <div class="mermaid">
+sequenceDiagram
+    participant Player as Player
+    participant KZ as KZ
+    participant Provider as 3rd Payment Provider
+
+    Player->>Provider: Transfer directly to CLABE (not open KZ)
+    Provider->>Provider: Accept, verify fund, create order
+    Provider-->>KZ: Callback notify fund received
+    Note right of KZ: <b class="highlight-callback">Callback/validation step</b>
+    KZ->>KZ: Verify order callback
+    alt True
+        KZ->>KZ: Create order KZ, credit fund to player's wallet
+    else False
+        KZ-->>KZ: NO create order
+    end
+  </div>
+</section>
+
+<script>
+  mermaid.initialize({ startOnLoad: true });
+</script>
+
+</body>
+</html>
